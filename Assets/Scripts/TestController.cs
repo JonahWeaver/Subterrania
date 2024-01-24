@@ -4,25 +4,52 @@ using UnityEngine;
 
 public class TestController : MonoBehaviour
 {
-    public float speed = 10f;
+    public float speed = 5f;
+    public float jumpForce = 5f;
+    public float scale = .75f;
+    public bool isGrounded = false;
+    private Rigidbody2D rb;
+
+    public LayerMask groundLayer;
+    //public BoxCollider groundDetector;
+
+
+    void Start()
+    {
+        rb = GetComponent<Rigidbody2D>();
+    }
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKey(KeyCode.A))
+        isGrounded = Physics2D.OverlapCircle(transform.position, .39f, groundLayer);
+
+        // Horizontal movement
+        float move = Input.GetAxis("Horizontal");
+        float mult = isGrounded ? 1f : 1f;
+        rb.velocity = new Vector3(move * speed, rb.velocity.y *mult, 0f);
+
+        // Flip character sprite based on direction of movement
+        if (move > 0)
         {
-            gameObject.transform.position -= Vector3.right * speed * Time.deltaTime;
+            transform.localScale = new Vector3(scale, scale, scale);
         }
-        if (Input.GetKey(KeyCode.D))
+        else if (move < 0)
         {
-            gameObject.transform.position += Vector3.right * speed * Time.deltaTime;
+            transform.localScale = new Vector3(-scale, scale, scale);
         }
-        if (Input.GetKey(KeyCode.S))
+
+        // Jumping
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
-            gameObject.transform.position -= Vector3.up * speed * Time.deltaTime;
+            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
         }
-        if (Input.GetKey(KeyCode.W))
-        {
-            gameObject.transform.position += Vector3.up * speed * Time.deltaTime;
-        }
+        //else if(isGrounded)
+        //{
+        //    rb.velocity = new Vector2(rb.velocity.x, 0f);
+        //}
+
+        // Update animator parameters
+        //animator.SetFloat("Speed", Mathf.Abs(move));
+        //animator.SetBool("IsGrounded", isGrounded);
     }
 }
