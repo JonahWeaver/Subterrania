@@ -25,6 +25,16 @@ public class TileChunk
         AddTilesToChunk();
     }
 
+    public void RemoveTileFromTileMap(int x, int y)
+    {
+        tileMap[x, y] = 0;
+    }
+
+    public void AddTileToTileMap(int x, int y, byte tileByte)
+    {
+        tileMap[x, y] = tileByte;
+    }
+
     void PopulateTileMap()
     {
         for (int x = 0; x < TileData.ChunkWidth; x++)
@@ -105,6 +115,11 @@ public class TileChunk
                 world.tileMapController.DeleteTile(new Vector3Int(x + (int)(position.x), y + (int)(position.y), 0));
             }
         }
+    }
+
+    public byte GetTileByte(int x, int y)
+    {
+        return tileMap[x, y];
     }
 }
 public class ChunkCoord

@@ -1,11 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 public class TileWorld : MonoBehaviour
 {
-    public GenerationMethod method;
+    public ItemManager itemManager;
 
+    public GenerationMethod method;
     public int seed;
 
     public Transform player;
@@ -75,6 +77,7 @@ public class TileWorld : MonoBehaviour
     {
         //if player changes chunkcoords
         //Update current viewable chunks
+
         if (PlayerChunkCoordChanged())
         {
             AllocateChunksWithinView();
@@ -126,10 +129,47 @@ public class TileWorld : MonoBehaviour
         int frameRegenCount = 0;
         while(regenCount < maxRegenCount && frameRegenCount < regenAttemptPerFrame)
         {
-            Debug.Log("here");
             tileMapController.RegenerateCompositeCollider();
             frameRegenCount++;
             regenCount++;
+        }
+    }
+
+    public void BreakBlockInWorld(Vector2 worldPoint)
+    {
+        ChunkCoord cc = GetChunkCoordFromVector3(worldPoint);
+
+        TileChunk chunk = chunks[cc.x, cc.y];
+        if (chunk != null)
+        {
+            byte tileByte = chunk.GetTileByte((int)(worldPoint.x - (cc.x * TileData.ChunkWidth)), (int)(worldPoint.y) - (cc.y * TileData.ChunkWidth));
+            BaseItem item = tileTypes[tileByte].item;
+            tileMapController.DeleteTile(new Vector3Int((int)(worldPoint.x), (int)(worldPoint.y), 0));
+            if (tileByte != 0) itemManager.DropItemOnGround(new Vector2((int)(worldPoint.x) + .5f, (int)(worldPoint.y) + .5f), item);
+            chunk.RemoveTileFromTileMap((int)(worldPoint.x - (cc.x * TileData.ChunkWidth)), (int)(worldPoint.y) - (cc.y * TileData.ChunkWidth));
+            regenCount = 0;
+        }
+    }
+    
+    public void PlaceBlockInWorld(Vector2 worldPoint)
+    {
+        ChunkCoord cc = GetChunkCoordFromVector3(worldPoint);
+
+        TileChunk chunk = chunks[cc.x, cc.y];
+        if (chunk != null)
+        {
+            byte tileByte = chunk.GetTileByte((int)(worldPoint.x - (cc.x * TileData.ChunkWidth)), (int)(worldPoint.y) - (cc.y * TileData.ChunkWidth));
+
+            if (tileByte == 0)
+            {
+                BaseItem item = player.GetComponent<Inventory>().GetFirstItem();
+                if (item != null)
+                {
+                    tileMapController.DrawTile(new Vector3Int((int)(worldPoint.x), (int)(worldPoint.y), 0), item.tileTypeIndex);
+                    chunk.AddTileToTileMap((int)(worldPoint.x - (cc.x * TileData.ChunkWidth)), (int)(worldPoint.y) - (cc.y * TileData.ChunkWidth), item.tileTypeIndex);
+                }
+            }
+            regenCount = 0;
         }
     }
 
@@ -177,8 +217,6 @@ public class TileWorld : MonoBehaviour
                 }
             }
         }
-        //Debug.Log(activeChunks.Count.ToString());
-        //Debug.Log((activeChunks.Count + chunksToCreate.Count).ToString());
         for (int i=0;i< previouslyActiveChunks.Count;i++)
         {
             int x = previouslyActiveChunks[i].x;
@@ -351,6 +389,7 @@ public class TileWorld : MonoBehaviour
         public string tileName;
         public bool isSolid;
         public int textureID;
+        public BaseItem item;
     }
 
     [System.Serializable]
